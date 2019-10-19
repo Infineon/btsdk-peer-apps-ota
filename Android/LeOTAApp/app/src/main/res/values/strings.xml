@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ *
+ *  Copyright (C) 2013-2014 Broadcom Corporation
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+-->
+<resources>
+
+    <string name="app_name">LE OTA App</string>
+
+    <!-- UI Labels -->
+    <string name="label_selectdevice">Select device</string>
+    <string name="label_connect">Connect</string>
+    <string name="label_disconnect">Disconnect</string>
+    <string name="label_ota_service">OTA Firmware Upgrade</string>
+    <string name="description_ota_service">Select OTA image file to use, then press Update button</string>
+    <string name="label_device_info_service">Service: Device Information</string>
+    <string name="label_battery_service">Service: Battery</string>
+    <string name="label_manufacturer_name">Manufacturer name</string>
+    <string name="label_model_number">Model number</string>
+    <string name="label_system_id">System ID</string>
+    <string name="label_battery_level">Battery level</string>
+    <string name="label_settings">Device Settings</string>
+    <string name="label_ota_input">Characteristic: OTA configuration\n{%1$s}</string>
+    <string name="label_ota_configuration">Characteristic: OTA configuration\n{%1$s}</string>
+    <string name="label_write">Write</string>
+    <string name="label_read">Read</string>
+    <string name="label_clear">Clear</string>
+    <string name="label_notifications">Notifications</string>
+
+    <!-- Error messages -->
+    <string name="error_bluetooth_not_available">Bluetooth is not available or enabled</string>
+    <string name="error_connect">Problem connecting to device %1$s (%2$s)</string>
+    <string name="error_disconnect">Problem disconnecting from device %1$s (%2$s)</string>
+    <string name="error_connection">Problem with connection to device %1$s (%2$s)</string>
+    <string name="error_discover">Problem discovering services on device %1$s (%2$s)</string>
+
+    <!-- Default values -->
+    <string name="no_value">(no value)</string>
+    <string name="no_device">&lt;Tap to select a device&gt;</string>
+    <string name="connected">Connected</string>
+    <string name="disconnected">Disconnected</string>
+
+    <string-array name="values_ota_input">
+        <item>Do not send</item>
+        <item>Allow notifications</item>
+        <item>Allow indications</item>
+    </string-array>
+    <string name="label_update">Update</string>
+    <string name="no_ota_image">&lt;Tap to select OTA image&gt;</string>
+
+</resources>
