@@ -7,7 +7,7 @@ android {
     defaultConfig {
         applicationId "com.cypress.app.otasppapp"
         minSdkVersion 21
-        targetSdkVersion 21
+        targetSdkVersion 23
     }
 
     buildTypes {
