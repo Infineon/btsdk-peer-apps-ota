@@ -18,6 +18,7 @@
 package com.broadcom.app.leotaapp;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Random;
 import java.util.UUID;
@@ -27,6 +28,7 @@ import com.broadcom.app.ledevicepicker.DeviceListFragment.Callback;
 import com.broadcom.app.ledevicepicker.DevicePickerFragment;
 import com.broadcom.app.leotaapp.GattUtils.RequestQueue;
 
+import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -35,6 +37,8 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Layout;
 import android.text.method.ScrollingMovementMethod;
@@ -49,6 +53,8 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import android.support.v4.app.ActivityCompat;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -446,6 +452,43 @@ public class MainActivity extends Activity implements OnClickListener, Callback,
         }
     }
 
+    private static final int PERM_REQUEST_CODE      = 11;
+
+    private boolean requestPermissions() {
+        ArrayList<String> permissionList = new ArrayList<String>();
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1) {
+            if (checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
+                permissionList.add(Manifest.permission.BLUETOOTH);
+            }
+            if (checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
+                permissionList.add(Manifest.permission.BLUETOOTH_ADMIN);
+            }
+            if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                permissionList.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+            }
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissionList.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+            }
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissionList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            }
+        }
+
+        if (permissionList.size() > 0) {
+            Log.d(TAG, "requestPermissions: permissionList size = " + permissionList.size());
+
+            String[] permissions = permissionList.toArray(new String[permissionList.size()]);
+            Log.d(TAG, "requestPermissions: permissions length = " + permissions.length);
+            for (int i = 0; i < permissions.length; i++) {
+                Log.d(TAG, "requestPermissions: permissions[" + i + "] = " + permissions[i]);
+            }
+
+            ActivityCompat.requestPermissions(this, permissions, PERM_REQUEST_CODE);
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -485,11 +528,15 @@ public class MainActivity extends Activity implements OnClickListener, Callback,
         mLabelOTAStatus = (TextView) findViewById(R.id.label_ota_configuration);
         mLabelOTAStatus.setText(getString(R.string.label_ota_configuration, Constants.UPGRADE_CHARACTERISTIC_CONTROL_POINT_UUID));
 
+        mPickedDeviceIsConnected = false;
+
         // Initialize the device picker UI fragment
         initDevicePicker();
 
         // refresh the UI component states
         updateWidgets();
+
+        requestPermissions();
     }
 
     /**
@@ -574,11 +621,13 @@ public class MainActivity extends Activity implements OnClickListener, Callback,
         return null;
     }
 
+
     /**
      * Callback invoked when buttons/switches clicked
      */
     @Override
     public void onClick(View v) {
+
         if (v == mButtonSelectDevice) {
             // Start the device selector
             mDevicePicker.show(getFragmentManager(), FRAGMENT_DEVICE_PICKER);
@@ -716,6 +765,12 @@ public class MainActivity extends Activity implements OnClickListener, Callback,
      * Connect to the picked device
      */
     private void connect() {
+
+        if(mPickedDeviceIsConnected){
+            Log.d(TAG, "Device already connected");
+            return;
+        }
+
         if (mPickedDevice == null) {
             showMessage(getString(R.string.error_connect, mPickedDevice.getName(),
                     mPickedDevice.getAddress()));

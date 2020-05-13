@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.broadcom.app.leotaapp"
-        minSdkVersion 21
+        minSdkVersion 23
         targetSdkVersion 23
     }
 
@@ -16,4 +16,8 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
+}
+
+dependencies {
+    implementation 'com.android.support:support-v4:25.3.1'
 }

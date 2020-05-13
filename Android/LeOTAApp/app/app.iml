@@ -19,7 +19,7 @@
         <option name="ALLOW_USER_CONFIGURATION" value="false" />
         <option name="MANIFEST_FILE_RELATIVE_PATH" value="/src/main/AndroidManifest.xml" />
         <option name="RES_FOLDER_RELATIVE_PATH" value="/src/main/res" />
-        <option name="RES_FOLDERS_RELATIVE_PATH" value="file://$MODULE_DIR$/src/main/res" />
+        <option name="RES_FOLDERS_RELATIVE_PATH" value="file://$MODULE_DIR$/src/main/res;file://$MODULE_DIR$/build/generated/res/resValues/debug" />
         <option name="TEST_RES_FOLDERS_RELATIVE_PATH" value="" />
         <option name="ASSETS_FOLDER_RELATIVE_PATH" value="/src/main/assets" />
       </configuration>
@@ -89,5 +89,12 @@
     </content>
     <orderEntry type="jdk" jdkName="Android API 23 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Gradle: com.android.support:support-annotations:25.3.1@jar" level="project" />
+    <orderEntry type="library" name="Gradle: com.android.support:support-v4:25.3.1@aar" level="project" />
+    <orderEntry type="library" name="Gradle: com.android.support:support-fragment:25.3.1@aar" level="project" />
+    <orderEntry type="library" name="Gradle: com.android.support:support-media-compat:25.3.1@aar" level="project" />
+    <orderEntry type="library" name="Gradle: com.android.support:support-core-utils:25.3.1@aar" level="project" />
+    <orderEntry type="library" name="Gradle: com.android.support:support-core-ui:25.3.1@aar" level="project" />
+    <orderEntry type="library" name="Gradle: com.android.support:support-compat:25.3.1@aar" level="project" />
   </component>
 </module>

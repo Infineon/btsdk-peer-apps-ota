@@ -17,10 +17,13 @@
  ******************************************************************************/
 package com.cypress.app.otasppapp;
 
+import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -36,8 +39,11 @@ import com.cypress.app.devicepicker.DeviceListFragment.Callback;
 import com.cypress.app.devicepicker.DevicePickerFragment;
 import com.cypress.app.otasppapp.GattUtils.RequestQueue;
 
+import android.support.v4.app.ActivityCompat;
+
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.ArrayList;
 import java.util.Calendar;
 
 
@@ -188,7 +194,7 @@ public class MainActivity extends Activity implements OnClickListener, Callback,
 
     private BluetoothSerial.BluetoothConnectionListener mConnLister = new BluetoothSerial.BluetoothConnectionListener() {
         public void onDeviceConnected(String name, String address) {
-            Log.d(MainActivity.TAG, "onConnectionStateChange(): address=="  + address + ", name = " + name);
+            Log.d(MainActivity.TAG, "onDeviceConnected(): address=="  + address + ", name = " + name);
             boolean isConnected = true;
             if (isConnected)
             {
@@ -198,14 +204,14 @@ public class MainActivity extends Activity implements OnClickListener, Callback,
         }
 
     public void onDeviceDisconnected() {
-                Log.d(MainActivity.TAG, "onConnectionStateChange(): Connection closed");
+                Log.d(MainActivity.TAG, "onDeviceDisconnected(): Connection closed");
 
                 processConnectionStateChanged(false, false);
                 //closeDevice();
         }
 
     public void onDeviceConnectionFailed() {
-                Log.d(MainActivity.TAG, "onConnectionStateChange(): Connection failed");
+                Log.d(MainActivity.TAG, "onDeviceConnectionFailed(): Connection failed");
 
                 processConnectionStateChanged(false, false);
                 //closeDevice();
@@ -280,6 +286,43 @@ public class MainActivity extends Activity implements OnClickListener, Callback,
         }
     }
 
+    private static final int PERM_REQUEST_CODE      = 11;
+
+    private boolean requestPermissions() {
+        ArrayList<String> permissionList = new ArrayList<String>();
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1) {
+            if (checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
+                permissionList.add(Manifest.permission.BLUETOOTH);
+            }
+            if (checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
+                permissionList.add(Manifest.permission.BLUETOOTH_ADMIN);
+            }
+            if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                permissionList.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+            }
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissionList.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+            }
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissionList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            }
+        }
+
+        if (permissionList.size() > 0) {
+            Log.d(TAG, "requestPermissions: permissionList size = " + permissionList.size());
+
+            String[] permissions = permissionList.toArray(new String[permissionList.size()]);
+            Log.d(TAG, "requestPermissions: permissions length = " + permissions.length);
+            for (int i = 0; i < permissions.length; i++) {
+                Log.d(TAG, "requestPermissions: permissions[" + i + "] = " + permissions[i]);
+            }
+
+            ActivityCompat.requestPermissions(this, permissions, PERM_REQUEST_CODE);
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -333,6 +376,8 @@ public class MainActivity extends Activity implements OnClickListener, Callback,
 
         // refresh the UI component states
         updateWidgets();
+
+        requestPermissions();
     }
 
     /**
