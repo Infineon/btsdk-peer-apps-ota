@@ -544,6 +544,10 @@ BOOL CBtWin10Interface::Init()
             if ((hr != S_OK) || com_status != GattCommunicationStatus_Success)
             {
                 ods("get characterisctics Comm Status: %d", com_status);
+                // A few GATT services like HID over GATT (short UUID 0x1812) are protected by the OS, leading to an access denied error.
+                if(uuid.Data1 == 0x1812)
+                    continue;
+                else
                 bError = TRUE;
             }
         }
