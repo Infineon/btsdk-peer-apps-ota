@@ -2,14 +2,14 @@
     CONSOLE APPLICATION : WsOtaUpgrade Project Overview
 ========================================================================
 
-This application is performing firmware upgrade of the Wiced Bluetooth
-device over the air.  It uses GATT Vendor Specific Service to send
+This application is performing firmware upgrade of the WICED Bluetooth
+device over the air.  It uses a GATT Vendor Specific Service to send
 commands and data packets, and to receive status notifications.
 
 WARNING:  If EEPROM or Serial Flash installed on the device is less then 64
-KBytes, the memory after the upgrade might be corrupted.  Use the Recovery
-procedure described in the WICED Studio Quick Start Guide or the Kit Guide
-for your platform to continue using the device.
+KBytes, the memory after the upgrade might be corrupted.  Use the Recover
+procedure described in the README.md file from any BTSDK application project
+to continue using the device.
 
 Usage:
 ------
@@ -24,27 +24,27 @@ Notes:
 
 The protocol for the upgrade over air is rather simple.
 
-On the startup application reads the FW image file.  Then
-application searches for a paired device which exposes the Vendor
-Specific Wiced Upgrade service.
+On startup the application reads the FW image file.  Then the
+application searches for a paired device that exposes the Vendor
+Specific WICED Upgrade service.
 
-The Upgrade service exposes Control Point characteristic which
+The Upgrade service exposes Control Point characteristic which the
 application can use to send commands and receive notifications, and
-a Data characteristic which application uses to send chunks of data
+a Data characteristic which the application uses to send chunks of data
 to the device.
 
-To start the upgrade application writes one byte
-WS_UPGRADE_COMMAND_PREPARE_DOWNLOAD command.  And device replies with
+To start the upgrade the application writes a one byte
+WS_UPGRADE_COMMAND_PREPARE_DOWNLOAD command.  And the device replies with
 WS_UPGRADE_RESPONSE_OK.
 
-Next application writes WS_UPGRADE_COMMAND_DOWNLOAD with 2 bytes
-of the patch lenght.  After application receive OK response it starts
-writing 20 bytes chunks of data.  After all the data has been
-completed application sends WS_UPGRADE_COMMAND_VERIFY command
-passing passing 32 bit checksum.
+Next the application writes WS_UPGRADE_COMMAND_DOWNLOAD with 2 bytes
+of the patch length.  After the application receives an OK response it starts
+writing 20 byte chunks of data.  After all the data has been
+completed, the application sends the WS_UPGRADE_COMMAND_VERIFY command
+passing a 32 bit checksum.
 
-At that time device verifies that data has been successfully committed
-to EEPROM or SFLASH and acknowledge with WS_UPGRADE_RESPONSE_OK if
+At that time device verifies that the data has been successfully committed
+to EEPROM or SFLASH and acknowledges with WS_UPGRADE_RESPONSE_OK if
 success or WS_UPGRADE_RESPONSE_FAILED if not all bytes were received
-or if checsum does not match.  In case of success device automatically
-reboots after making downloaded image active.
+or if checsum does not match.  If the success case the device automatically
+reboots after making the downloaded image active.
