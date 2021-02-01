@@ -1,10 +1,10 @@
 /*
- * Copyright 2016-2020, Cypress Semiconductor Corporation or a subsidiary of
- * Cypress Semiconductor Corporation. All Rights Reserved.
+ * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
- * materials ("Software"), is owned by Cypress Semiconductor Corporation
- * or one of its subsidiaries ("Cypress") and is protected by and subject to
+ * materials ("Software") is owned by Cypress Semiconductor Corporation
+ * or one of its affiliates ("Cypress") and is protected by and subject to
  * worldwide patent protection (United States and foreign),
  * United States copyright laws and international treaty provisions.
  * Therefore, you may use this Software only as provided in the license
@@ -13,7 +13,7 @@
  * If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
  * non-transferable license to copy, modify, and compile the Software
  * source code solely for use in connection with Cypress's
- * integrated circuit products. Any reproduction, modification, translation,
+ * integrated circuit products.  Any reproduction, modification, translation,
  * compilation, or representation of this Software except as specified
  * above is prohibited without the express written permission of Cypress.
  *
@@ -91,6 +91,9 @@ HRESULT CDeviceSelectAdv::OnAdvertisementReceived(IBluetoothLEAdvertisementWatch
     {
         BD_ADDR bda;
         char buff[256] = { 0 };
+        bool add_device = false;
+        bool bOTADevice = false;
+        int iIndex = 0;
 
         BthAddrToBDA(bda, &address);
         ods("OnAdvertisementReceived address: %lld", address);
@@ -109,13 +112,13 @@ HRESULT CDeviceSelectAdv::OnAdvertisementReceived(IBluetoothLEAdvertisementWatch
         for (i = 0; i < m_numDevices; i++)
         {
             m_lbDevices.GetText(i, buf2);
-            if (!wcslen(buf2) || !wcscmp(buf, buf2))
+            if (!wcslen(buf2) || !wcsncmp(buf2, buf, wcslen(buf)))
                 break;
         }
         // Add this device if it is new one
         if (i >= m_numDevices)
         {
-            m_lbDevices.AddString(buf);
+            add_device = true;
             m_numDevices++;
         }
         //==
@@ -126,6 +129,8 @@ HRESULT CDeviceSelectAdv::OnAdvertisementReceived(IBluetoothLEAdvertisementWatch
         hr = args->get_Advertisement(&bleAdvert);
         if (FAILED(hr))
         {
+            if(add_device)
+                iIndex = m_lbDevices.AddString(buf);
             ods("get_Advertisement failed");
         }
         else
@@ -134,9 +139,31 @@ HRESULT CDeviceSelectAdv::OnAdvertisementReceived(IBluetoothLEAdvertisementWatch
 
             // Get Name of the device
             HString name;
+            WCHAR   wbuf_name[64] = { 0 };
+            WCHAR   wbuf_txt[128] = { 0 };
+            char buff_name[256] = { 0 };
             hr = bleAdvert->get_LocalName(name.GetAddressOf());
-            sprintf_s(buff, sizeof(buff), "%S", name.GetRawBuffer(nullptr));
-            ods("Local Name: %s", buff);
+            // Append device name to BDA if name is not null
+            if (wcslen(name.GetRawBuffer(nullptr)) != 0)
+                sprintf_s(buff_name, sizeof(buff_name), " : name (%S)", name.GetRawBuffer(nullptr));
+
+            CString strName = name.GetRawBuffer(nullptr);
+            if (strName.CompareNoCase(L"OTA_FW_UPGRADE") == 0)
+                bOTADevice = true;
+
+            ods("Local Name: %s", buff_name);
+
+            MultiByteToWideChar(CP_UTF8, 0, (const char *)buff_name, (int)strlen(buff_name), wbuf_name, (int)sizeof(wbuf_name) / sizeof(WCHAR));
+            wcscpy_s(wbuf_txt, buf);
+            wcscat_s(wbuf_txt, wbuf_name);
+
+            if (add_device)
+            {
+                if (!bOTADevice)
+                    iIndex = m_lbDevices.AddString(wbuf_txt);
+                else
+                    iIndex = m_lbDevices.InsertString(0, wbuf_txt);
+            }
 
             // Get Services
             ComPtr<ABI::Windows::Foundation::Collections::IVector<GUID>> vecGuid;
@@ -402,14 +429,18 @@ void CDeviceSelectAdv::OnDblclkDeviceList()
 
 void CDeviceSelectAdv::OnBnClickedOk()
 {
-    WCHAR buf[24] = { 0 };
+    WCHAR buf_txt[128] = { 0 };
+    WCHAR buf_bda[24] = { 0 };
 
     StopLEAdvertisementWatcher();
 
-    m_lbDevices.GetText(m_lbDevices.GetCurSel(), buf);
+    m_lbDevices.GetText(m_lbDevices.GetCurSel(), buf_txt);
+
+    // The device name contains BDA and may contain device name. Get just the formatted BDA (first 17 bytes, xx:xx:xx:xx:xx:xx)
+    wcsncpy_s(buf_bda, buf_txt, 17);
 
     int bda[6];
-    if (swscanf_s(buf, L"%02x:%02x:%02x:%02x:%02x:%02x", &bda[0], &bda[1], &bda[2], &bda[3], &bda[4], &bda[5]) == 6)
+    if (swscanf_s(buf_bda, L"%02x:%02x:%02x:%02x:%02x:%02x", &bda[0], &bda[1], &bda[2], &bda[3], &bda[4], &bda[5]) == 6)
     {
         for (int i = 0; i < 6; i++)
              m_bth.rgBytes[5 - i] = (BYTE)bda[i];
