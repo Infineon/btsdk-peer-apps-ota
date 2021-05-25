@@ -13,11 +13,41 @@ to continue using the device.
 
 Usage:
 ------
-WsOtaUpgrade <image.bin>
+WsOtaUpgrade.exe <image.bin>
+
+or
+
+WsOtaUpgrade.exe /file <image.bin> [/peername <name>] [/secure] [/nonsecure] [/automation]
 
 The <image.bin> file is built when application is compiled for
 applications that support OTA. It is located in Debug folder of the app.
 (For example mainapp_download.ota.bin)
+
+The patch file <image.bin> name is mandatory, all others are optional.
+
+The app will show peer app with name "OTA_FW_UPGRADE" or name specified in /peername arg as first in the list (not case sensitive).
+
+If /secure is specified, only secure OTA is supported.
+
+if /nonsecure is specified, only non-secure OTA is supported.
+
+By default, both secure or non-secure are supported.
+
+if /automation is specified, the entire OTA is automated.
+
+In the first device selection dialog, if peer app with name "OTA_FW_UPGRADE" or name specified in /peername arg is found, then it will go to next step.
+It will wait for 60 sec before timeout occurs if no such device is found.
+
+The next OTA dialog will finish as soon as there is success or failure. If OTA is in progress and its more than 8 mins, then timeout will occur and OTA will fail.
+
+The success/failure return code is returned by the exe. Return code 0 is a success. Failure codes are as below defined in WsOtaUpgrade.h
+#define ERROR_GEN_FAIL -1  // General failure
+#define ERROR_SECURE_NONSECURE -2 // Command line specified both secure and non secure OTA
+#define ERROR_PATCH_FILE -3 // patch file was not found
+#define ERROR_BT_RADIO -4 // Local BT device on the computer was not detected
+#define ERROR_NO_OTA_SUPPORT -5 // Peer device did not support OTA
+#define ERROR_NO_OTA_SECURE_SUPPORT -6 // Peer device did not support secure OTA
+#define ERROR_NO_OTA_NON_SECURE_SUPPORT -7 // Peer device did not non secure support OTA
 
 Notes:
 ------

@@ -42,6 +42,13 @@
 
 #include "resource.h"		// main symbols
 
+#define ERROR_GEN_FAIL -1  // General failure
+#define ERROR_SECURE_NONSECURE -2 // Command line specified both secure and non secure OTA
+#define ERROR_PATCH_FILE -3 // patch file was not found
+#define ERROR_BT_RADIO -4 // Local BT device on the computer was not detected
+#define ERROR_NO_OTA_SUPPORT -5 // Peer device did not support OTA
+#define ERROR_NO_OTA_SECURE_SUPPORT -6 // Peer device did not support secure OTA
+#define ERROR_NO_OTA_NON_SECURE_SUPPORT -7 // Peer device did not non secure support OTA
 
 // CWsOtaUpgradeApp:
 // See WsOtaUpgrade.cpp for the implementation of this class
@@ -55,9 +62,14 @@ public:
 // Overrides
 public:
 	virtual BOOL InitInstance();
+	virtual int ExitInstance();
 
 // Implementation
-
+	BOOL m_bSecureOnly;
+	BOOL m_bNonSecureOnly;
+	CString m_strPeerName;
+	BOOL m_bAutomation;
+	int m_iRetCode;
 	DECLARE_MESSAGE_MAP()
 };
 

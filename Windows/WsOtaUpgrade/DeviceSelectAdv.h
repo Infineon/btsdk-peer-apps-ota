@@ -92,6 +92,8 @@ public:
 
     BLUETOOTH_ADDRESS m_bth;
     BOOL m_bWin8;
+    int m_iTimerCount;
+    BOOL m_bOtaFriendlyDevFound;
 
 public:
     int m_numDevices;
@@ -119,4 +121,5 @@ public:
 
 
 
+    afx_msg void OnTimer(UINT_PTR nIDEvent);
 };

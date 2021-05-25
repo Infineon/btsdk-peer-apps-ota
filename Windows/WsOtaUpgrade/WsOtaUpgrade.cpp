@@ -54,6 +54,92 @@ GUID guidSvcWSUpgrade;
 GUID guidCharWSUpgradeControlPoint;
 GUID guidCharWSUpgradeData;
 
+
+/////////////////////////////////////////////////////////////////////////////
+// CWsOtaUpgradeLineInfo
+
+
+class CWsOtaUpgradeLineInfo : public CCommandLineInfo
+{
+public:
+    CWsOtaUpgradeLineInfo();
+
+    // Overrides
+    void ParseParam(LPCTSTR lpszParam, BOOL bSwitch, BOOL bLast);
+
+    // Implementation
+    BOOL        m_bSecureOnly;
+    BOOL        m_bSecureNonOnly;
+    BOOL        m_bPatchFile;
+    BOOL        m_bPeerName;
+    BOOL        m_bAutomation;
+    CString     m_strPeerName;
+    CString     m_strPatchFile;
+
+};
+
+CWsOtaUpgradeLineInfo::CWsOtaUpgradeLineInfo() : CCommandLineInfo()
+{
+    m_bSecureOnly = FALSE;
+    m_bSecureNonOnly = FALSE;
+    m_bPatchFile = FALSE;
+    m_bPeerName = FALSE;
+    m_bAutomation = FALSE;
+    m_strPeerName.Empty();
+    m_strPatchFile.Empty();
+}
+
+// Command line args:
+// WsOtaUpgrade.exe /file <patch-file-path> [/peername <name>] [/secure] [/nonsecure] [/automation]
+// OR (legacy support)
+// WsOtaUpgrade.exe <patch-file-path>
+
+void CWsOtaUpgradeLineInfo::ParseParam(LPCTSTR lpszParam, BOOL bSwitch, BOOL bLast)
+{
+    CString csParam(lpszParam);
+    csParam.MakeLower();
+
+    if (bSwitch)
+    {
+        if (csParam.CompareNoCase(L"file") == 0)
+        {
+            m_bPatchFile = TRUE;
+        }
+        if (csParam.CompareNoCase(L"peername") == 0)
+        {
+            m_bPeerName = TRUE;
+        }
+        if (csParam.CompareNoCase(L"secure") == 0)
+        {
+            m_bSecureOnly = TRUE;
+        }
+        if (csParam.CompareNoCase(L"nonsecure") == 0)
+        {
+            m_bSecureNonOnly = TRUE;
+        }
+        if (csParam.CompareNoCase(L"automation") == 0)
+        {
+            m_bAutomation = TRUE;
+        }
+    }
+    else
+    {
+        if (m_bPatchFile)
+        {
+            m_strPatchFile = csParam;
+            ods("patch file %S", m_strPatchFile);
+            m_bPatchFile = FALSE;
+        }
+        else if (m_bPeerName)
+        {
+            m_strPeerName = csParam;
+            ods("remote name file %S", m_strPeerName);
+            m_bPeerName = FALSE;
+        }
+        else if(m_strPatchFile.IsEmpty())
+            m_strPatchFile = csParam;
+    }
+}
 // CWsOtaUpgradeApp
 
 BEGIN_MESSAGE_MAP(CWsOtaUpgradeApp, CWinApp)
@@ -292,7 +378,7 @@ BOOL CWsOtaUpgradeApp::InitInstance()
     InitCommonControlsEx(&InitCtrls);
 
     CWinApp::InitInstance();
-
+    m_iRetCode = ERROR_GEN_FAIL;
 
     //==== CoInitializeEx and Security for WRL LE Functionality ====//
     HRESULT hr = NULL;
@@ -336,16 +422,33 @@ BOOL CWsOtaUpgradeApp::InitInstance()
     }
     //==== CoInitializeEx and Security for WRL LE Functionality ====//
 
-    CCommandLineInfo cmdInfo;
+    CWsOtaUpgradeLineInfo cmdInfo;
     ParseCommandLine(cmdInfo);
 
+    m_strPeerName = cmdInfo.m_strPeerName;
+    m_bSecureOnly = cmdInfo.m_bSecureOnly;
+    m_bNonSecureOnly = cmdInfo.m_bSecureNonOnly;
+    m_bAutomation = cmdInfo.m_bAutomation;
+
+    if (m_bSecureOnly && m_bNonSecureOnly)
+    {
+        if(!m_bAutomation)
+            MessageBox(NULL, L"Specify either 'secure' or 'nonsecure', not both.", L"Error", MB_OK);
+        m_iRetCode = ERROR_SECURE_NONSECURE;
+        return (FALSE);
+    }
+
     char filename[MAX_PATH];
-    WideCharToMultiByte(CP_ACP, 0, cmdInfo.m_strFileName, -1, filename, sizeof (filename), NULL, 0);
+    strcpy(filename, "");
+    if(!cmdInfo.m_strPatchFile.IsEmpty())
+        WideCharToMultiByte(CP_ACP, 0, cmdInfo.m_strPatchFile, -1, filename, sizeof (filename), NULL, 0);
 
     FILE *fPatch;
     if (fopen_s(&fPatch, filename, "rb"))
     {
-        MessageBox(NULL, L"Failed to open the patch file", L"Error", MB_OK);
+        if (!m_bAutomation)
+            MessageBox(NULL, L"Failed to open the patch file. Use command line to specify patch file.\nSyntax: \nWsOtaUpgrade.exe /file <patchfile>", L"Error", MB_OK);
+        m_iRetCode = ERROR_PATCH_FILE;
         return (FALSE);
     }
     // read private key
@@ -363,8 +466,10 @@ BOOL CWsOtaUpgradeApp::InitInstance()
     HBLUETOOTH_RADIO_FIND hf = BluetoothFindFirstRadio(&params, &hRadio);
     if (hf == NULL)
     {
-        MessageBox(NULL, L"Bluetooth radio is not present or not functioning.  Please plug in the dongle and try again.", L"Error", MB_OK);
+        if (!m_bAutomation)
+            MessageBox(NULL, L"Bluetooth radio is not present or not functioning.  Please plug in the dongle and try again.", L"Error", MB_OK);
         delete[] pPatch;
+        m_iRetCode = ERROR_BT_RADIO;
         return FALSE;
     }
     CloseHandle(hRadio);
@@ -414,7 +519,8 @@ BOOL CWsOtaUpgradeApp::InitInstance()
         dlg.m_bWin8 = TRUE;
         if ((hLib = LoadLibrary(L"BluetoothApis.dll")) == NULL)
         {
-            MessageBox(NULL, L"Failed to load BluetoothAPIs library", L"Error", MB_OK);
+            if (!m_bAutomation)
+                MessageBox(NULL, L"Failed to load BluetoothAPIs library", L"Error", MB_OK);
             delete[] pPatch;
             return FALSE;
         }
@@ -430,7 +536,8 @@ BOOL CWsOtaUpgradeApp::InitInstance()
         LibPath.GetFullInstallPathOf(L"BTWLeApi.Dll", BtDevFullPath, MAX_PATH);
         if ((hLib = LoadLibrary(BtDevFullPath)) == NULL)
         {
-            MessageBox(NULL, L"Broadcom Blueototh profile pack for Windows (BTW) has to be installed", L"Error", MB_OK);
+            if (!m_bAutomation)
+                MessageBox(NULL, L"Broadcom Blueototh profile pack for Windows (BTW) has to be installed", L"Error", MB_OK);
             delete[] pPatch;
             return FALSE;
         }
@@ -439,7 +546,8 @@ BOOL CWsOtaUpgradeApp::InitInstance()
     }
     else
     {
-        MessageBox(NULL, L"This application can run on Windows 8 or on Windows 7 with Broadcom Bluetooth profile pack for Windows (BTW) installed", L"Error", MB_OK);
+        if (!m_bAutomation)
+            MessageBox(NULL, L"This application can run on Windows 8 or on Windows 7 with Broadcom Bluetooth profile pack for Windows (BTW) installed", L"Error", MB_OK);
         delete[] pPatch;
         return FALSE;
     }
@@ -458,9 +566,11 @@ BOOL CWsOtaUpgradeApp::InitInstance()
     nResponse = dlg.DoModal();
     if (nResponse == IDOK)
     {
+        m_iRetCode = dlg.m_iRetCode;
     }
     else if (nResponse == IDCANCEL)
     {
+        m_iRetCode = dlg.m_iRetCode;
     }
     else if (nResponse == -1)
     {
@@ -477,6 +587,11 @@ BOOL CWsOtaUpgradeApp::InitInstance()
     return FALSE;
 }
 
+int CWsOtaUpgradeApp::ExitInstance()
+{
+    CWinApp::ExitInstance();
+    return m_iRetCode;
+}
 
 void ods(char * fmt_str, ...)
 {

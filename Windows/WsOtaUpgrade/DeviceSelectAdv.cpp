@@ -39,6 +39,7 @@
 #include "afxdialogex.h"
 #include <Sddl.h>
 #include <WinBase.h>
+#include "WsOtaUpgrade.h"
 
 // =======================
 #pragma comment(lib, "RuntimeObject.lib")
@@ -147,8 +148,13 @@ HRESULT CDeviceSelectAdv::OnAdvertisementReceived(IBluetoothLEAdvertisementWatch
             if (wcslen(name.GetRawBuffer(nullptr)) != 0)
                 sprintf_s(buff_name, sizeof(buff_name), " : name (%S)", name.GetRawBuffer(nullptr));
 
+            // If a known device is found, insert it at the top of the list
             CString strName = name.GetRawBuffer(nullptr);
             if (strName.CompareNoCase(L"OTA_FW_UPGRADE") == 0)
+                bOTADevice = true;
+            if (strName.CompareNoCase(L"OTA_FW_UPGRADE_SVT") == 0)
+                bOTADevice = true;
+            if(!theApp.m_strPeerName.IsEmpty() && strName.CompareNoCase(theApp.m_strPeerName) == 0)
                 bOTADevice = true;
 
             ods("Local Name: %s", buff_name);
@@ -162,7 +168,10 @@ HRESULT CDeviceSelectAdv::OnAdvertisementReceived(IBluetoothLEAdvertisementWatch
                 if (!bOTADevice)
                     iIndex = m_lbDevices.AddString(wbuf_txt);
                 else
+                {
                     iIndex = m_lbDevices.InsertString(0, wbuf_txt);
+                    m_bOtaFriendlyDevFound = TRUE;
+                }
             }
 
             // Get Services
@@ -372,6 +381,8 @@ CDeviceSelectAdv::CDeviceSelectAdv(CWnd* pParent /*=NULL*/)
     : CDialogEx(CDeviceSelectAdv::IDD, pParent)
 {
     m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+    m_iTimerCount = 0;
+    m_bOtaFriendlyDevFound = FALSE;
 }
 
 CDeviceSelectAdv::~CDeviceSelectAdv()
@@ -389,6 +400,7 @@ BEGIN_MESSAGE_MAP(CDeviceSelectAdv, CDialogEx)
     ON_BN_CLICKED(IDOK, &CDeviceSelectAdv::OnBnClickedOk)
     ON_BN_CLICKED(IDCANCEL, &CDeviceSelectAdv::OnBnClickedCancel)
 
+    ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 DWORD WINAPI DeviceDiscoveryThread(void *Context)
@@ -416,6 +428,9 @@ BOOL CDeviceSelectAdv::OnInitDialog()
 
     GetDlgItem(IDC_DEVICE_LIST_ADV)->ShowWindow(SW_SHOW);
     GetDlgItem(IDC_NO_DEVICES_ADV)->ShowWindow(SW_HIDE);
+
+    if (theApp.m_bAutomation)
+        SetTimer(1, 1000, 0); // 1 sec timer
 
     CreateThread(NULL, 0, DeviceDiscoveryThread, this, 0, NULL);
 
@@ -456,4 +471,27 @@ void CDeviceSelectAdv::OnBnClickedCancel()
     StopLEAdvertisementWatcher();
 
     CDialogEx::OnCancel();
+}
+
+
+void CDeviceSelectAdv::OnTimer(UINT_PTR nIDEvent)
+{
+    m_iTimerCount++;
+
+    if (m_lbDevices.GetCount() > 0)
+        m_lbDevices.SetCurSel(0); // Set the first device found as selected device
+
+    if (m_bOtaFriendlyDevFound) // if known device is found proceed
+    {
+        KillTimer(1);
+        PostMessage(WM_COMMAND, IDOK, 0);
+    }
+
+    if (m_iTimerCount > 60) // 60 sec timeout
+    {
+        KillTimer(1);
+        PostMessage(WM_COMMAND, IDOK, 0);
+    }
+
+    CDialogEx::OnTimer(nIDEvent);
 }

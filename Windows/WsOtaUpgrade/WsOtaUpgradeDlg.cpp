@@ -95,6 +95,8 @@ CWsOtaUpgradeDlg::CWsOtaUpgradeDlg(LPBYTE pPatch, DWORD dwPatchSize, CWnd* pPare
     m_bWin8 = FALSE;
     m_bWin10 = FALSE;
     m_numDevices = 0;
+    m_iTimerCount = 0;
+    m_iRetCode = ERROR_GEN_FAIL;  // fail
 }
 
 CWsOtaUpgradeDlg::~CWsOtaUpgradeDlg()
@@ -122,6 +124,7 @@ BEGIN_MESSAGE_MAP(CWsOtaUpgradeDlg, CDialogEx)
 
     ON_BN_CLICKED(IDC_START, &CWsOtaUpgradeDlg::OnBnClickedStart)
     ON_BN_CLICKED(IDC_SELECTDEVICE, &CWsOtaUpgradeDlg::OnSelectDevice)
+    ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 // CWsOtaUpgradeDlg message handlers
@@ -179,6 +182,9 @@ BOOL CWsOtaUpgradeDlg::OnInitDialog()
     GetDlgItem(IDC_DEVICE_LIST)->ShowWindow((m_numDevices == 0) ? SW_HIDE : SW_SHOW);
     GetDlgItem(IDC_NO_DEVICES)->ShowWindow((m_numDevices == 0) ? SW_SHOW : SW_HIDE);
     GetDlgItem(IDC_START)->SetWindowText((m_numDevices == 0) ? L"Done" : L"Start");
+
+    if (theApp.m_bAutomation)
+        SetTimer(1, 1000, 0); // 1 sec timer
 
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -416,6 +422,8 @@ void CWsOtaUpgradeDlg::OnBnClickedStart()
      && ((m_pDownloader->m_state == WSDownloader::WS_UPGRADE_STATE_VERIFIED)
       || (m_pDownloader->m_state == WSDownloader::WS_UPGRADE_STATE_ABORTED)))
     {
+        if(m_pDownloader->m_state == WSDownloader::WS_UPGRADE_STATE_VERIFIED)
+            m_iRetCode = 0; // success
         OnCancel();
         return;
     }
@@ -448,14 +456,33 @@ void CWsOtaUpgradeDlg::OnBnClickedStart()
 
     if (!m_btInterface->Init())
     {
-        MessageBox(L"Error initializing interface. This device may not support OTA FW Upgrade. Select another device.", L"Error", MB_OK);
+        if (!theApp.m_bAutomation) MessageBox(L"Error initializing interface. This device may not support OTA FW Upgrade. Select another device.", L"Error", MB_OK);
+        m_iRetCode = ERROR_NO_OTA_SUPPORT;
         return;
     }
 
-    if (m_bWin10 && !((CBtWin10Interface*)m_btInterface)->CheckForOTAServices())
+    if (m_bWin10)
     {
-        MessageBox(L"This device may not support OTA FW Upgrade. Select another device.", L"Error", MB_OK);
-        return;
+        if(!((CBtWin10Interface*)m_btInterface)->CheckForOTAServices())
+        {
+            if (!theApp.m_bAutomation) MessageBox(L"This device may not support OTA FW Upgrade. Select another device.", L"Error", MB_OK);
+            m_iRetCode = ERROR_NO_OTA_SUPPORT;
+            return;
+        }
+        // If command line specifies only secure OTA and peer is non secure, show error
+        if (!m_btInterface->m_bSecure && theApp.m_bSecureOnly)
+        {
+            if (!theApp.m_bAutomation) MessageBox(L"This device does not support secure OTA FW Upgrade. Select another device.", L"Error", MB_OK);
+            m_iRetCode = ERROR_NO_OTA_SECURE_SUPPORT;
+            return;
+        }
+        // If command line specifies only non secure OTA and peer is secure, show error
+        if (m_btInterface->m_bSecure && theApp.m_bNonSecureOnly)
+        {
+            if (!theApp.m_bAutomation) MessageBox(L"This device does not support non-secure OTA FW Upgrade. Select another device.", L"Error", MB_OK);
+            m_iRetCode = ERROR_NO_OTA_NON_SECURE_SUPPORT;
+            return;
+        }
     }
 
     m_pDownloader = new WSDownloader(m_btInterface, m_pPatch, m_dwPatchSize, m_hWnd);
@@ -578,4 +605,47 @@ LRESULT CWsOtaUpgradeDlg::OnDeviceDisconnected(WPARAM Instance, LPARAM lparam)
     }
 
     return S_OK;
+}
+
+void CWsOtaUpgradeDlg::OnTimer(UINT_PTR nIDEvent)
+{
+    m_iTimerCount++;
+
+
+    if (m_iTimerCount == 3) // at 3 sec start download
+    {
+        PostMessage(WM_COMMAND, IDC_START, 0);
+    }
+    else
+    {
+        if (m_pDownloader != NULL)
+        {
+            if ((m_pDownloader->m_state == WSDownloader::WS_UPGRADE_STATE_VERIFIED)
+                || (m_pDownloader->m_state == WSDownloader::WS_UPGRADE_STATE_ABORTED))
+            {
+                KillTimer(1);
+                PostMessage(WM_COMMAND, IDC_START, 0);
+            }
+            // if transfer do abort
+            if (m_pDownloader->m_state == WSDownloader::WS_UPGRADE_STATE_DATA_TRANSFER)
+            {
+                // keep going
+                if (m_iTimerCount > 480) // 480 sec (8 min) and still OTA is going is error
+                {
+                    KillTimer(1);
+                    PostMessage(WM_COMMAND, IDC_START, 0);
+                }
+            }
+        }
+        else
+        {
+            if (m_iTimerCount > 30) // 30+ sec and no m_pDownloader is error
+            {
+                KillTimer(1);
+                PostMessage(WM_COMMAND, IDC_START, 0);
+            }
+        }
+    }
+
+    CDialogEx::OnTimer(nIDEvent);
 }

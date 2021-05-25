@@ -65,6 +65,7 @@ public:
     HMODULE m_hLib;
     CBtInterface *m_btInterface;
     BLUETOOTH_ADDRESS m_bth;
+    int m_iRetCode;
 
     void SetParam(BLUETOOTH_ADDRESS *bth);
 
@@ -80,6 +81,7 @@ private:
     WSDownloader *m_pDownloader;
     LPBYTE m_pPatch;
     DWORD m_dwPatchSize;
+    int m_iTimerCount;
 
 // Implementation
 protected:
@@ -101,5 +103,6 @@ protected:
 public:
     afx_msg void OnBnClickedStart();
     afx_msg void OnSelectDevice();
+    afx_msg void OnTimer(UINT_PTR nIDEvent);
     CProgressCtrl m_Progress;
 };
