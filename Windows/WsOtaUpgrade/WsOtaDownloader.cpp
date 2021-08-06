@@ -149,7 +149,8 @@ DWORD WINAPI DownloadWorker (void *Context)
 #define MAX_MTU 512
 void WSDownloader::SetMTU(DWORD mtu)
 {
-    m_connMTU = mtu;
+    // m_connMTU is the number of bytes that we can send in a single Write Req. Which is peer's MTU - 3 bytes of ATT Header.
+    m_connMTU = mtu - 3;
 
     if (m_connMTU > MAX_MTU)
         m_connMTU = MAX_MTU;
