@@ -2,7 +2,7 @@
     CONSOLE APPLICATION : WsOtaUpgrade Project Overview
 ========================================================================
 
-This application is performing firmware upgrade of the WICED Bluetooth
+This application is performing firmware upgrade of the AIROC(TM) Bluetooth(r)
 device over the air.  It uses a GATT Vendor Specific Service to send
 commands and data packets, and to receive status notifications.
 
@@ -44,7 +44,7 @@ The success/failure return code is returned by the exe. Return code 0 is a succe
 #define ERROR_GEN_FAIL -1  // General failure
 #define ERROR_SECURE_NONSECURE -2 // Command line specified both secure and non secure OTA
 #define ERROR_PATCH_FILE -3 // patch file was not found
-#define ERROR_BT_RADIO -4 // Local BT device on the computer was not detected
+#define ERROR_BT_RADIO -4 // Local Bluetooth(r) device on the computer was not detected
 #define ERROR_NO_OTA_SUPPORT -5 // Peer device did not support OTA
 #define ERROR_NO_OTA_SECURE_SUPPORT -6 // Peer device did not support secure OTA
 #define ERROR_NO_OTA_NON_SECURE_SUPPORT -7 // Peer device did not non secure support OTA
@@ -56,7 +56,7 @@ The protocol for the upgrade over air is rather simple.
 
 On startup the application reads the FW image file.  Then the
 application searches for a paired device that exposes the Vendor
-Specific WICED Upgrade service.
+Specific AIROC(TM) Upgrade service.
 
 The Upgrade service exposes Control Point characteristic which the
 application can use to send commands and receive notifications, and

@@ -2,9 +2,9 @@
 
 ### Overview
 
-This repo contains peer apps for the Over-the-Air upgrade app. Binary and source code is included.
+This repo contains peer apps for the Over-the-Air Firmware Upgrade embedded app. Binaries and source code are included.
 
-These apps work on:
+Separate apps are supplied for:
 
 - Android
 - iOS
@@ -24,8 +24,8 @@ Note: Android OTA SPP app (OTASPPApp) is for 20721 platform apps such as headset
 To demonstrate the app, work through the following steps:
 
 ##### To perform OTA upgrade:
-1. Plug the WICED eval board into your computer.
-2. Build and download the application to the WICED board.
+1. Plug the AIROC&#8482; eval board into your computer.
+2. Build and download the application to the AIROC&#8482; board.
 3. The OTA image file (app-name)\_(bsp).ota.bin is generated in the (app-name)/build/(bsp)/Debug folder.
 
 Windows:
@@ -46,7 +46,10 @@ Android and iOS:
 2. Generate a private/public key pair by running the ecdsa_genkey application.
 3. Copy the generated ecdsa256\_pub.c to the application directory. For example:
      - (app-name)/secure/ecdsa256\_pub.c
-4. In your application, set makefile variable OTA\_SEC\_FW\_UPGRADE=1
+4. In your application, set makefile variable OTA\_SEC\_FW\_UPGRADE=1, and appropriate application ID and version:
+     - APP\_VERSION\_APP\_ID=0x1234
+     - APP\_VERSION\_MAJOR=1
+     - APP\_VERSION\_MINOR=0
 5. Clean and rebuild the application and download to the board.
 6. Copy generated (app-name)\_(bsp).ota.bin file in (app-name)/build/(bsp)/Debug folder back to ecdsa256/bin/(OS) directory.
 7. Sign the binary .ota.bin file with the public key using ecdsa\_sign application in ecdsa256/bin/(OS) folder. This will generate file (app-name)\_bsp.ota.bin.signed
@@ -72,6 +75,6 @@ Android:
 
 
 Note:
-On some older Bluetooth Devices on Windows, the OTA might fail because of an incompatible MTU. To work around this, change the code as below and rebuild the Windows application in ./Windows/WsOtaUpgrade/WsOtaDownloader.cpp:
+On some older Bluetooth&#174; Devices on Windows, the OTA might fail because of an incompatible MTU. To work around this, change the code as below and rebuild the Windows application in ./Windows/WsOtaUpgrade/WsOtaDownloader.cpp:
 
      * define MAX_MTU 256 // (instead of 512)

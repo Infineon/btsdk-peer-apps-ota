@@ -447,7 +447,11 @@ BOOL CWsOtaUpgradeApp::InitInstance()
     if (fopen_s(&fPatch, filename, "rb"))
     {
         if (!m_bAutomation)
-            MessageBox(NULL, L"Failed to open the patch file. Use command line to specify patch file.\nSyntax: \nWsOtaUpgrade.exe /file <patchfile>", L"Error", MB_OK);
+        {
+            TCHAR str[MAX_PATH + 128] = { '\0' };
+            _stprintf_s(str, _countof(str), _T("OTA Upgrade file \"%s\" does not exist.\nBuild application before running this tool.\nCommand line syntax: WsOtaUpgrade.exe /file <upgrade file>"), (LPCTSTR)cmdInfo.m_strPatchFile);
+            MessageBox(NULL, str, L"Error", MB_OK);
+        }
         m_iRetCode = ERROR_PATCH_FILE;
         return (FALSE);
     }
