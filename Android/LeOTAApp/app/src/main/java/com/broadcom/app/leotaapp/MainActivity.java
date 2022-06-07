@@ -772,8 +772,7 @@ public class MainActivity extends Activity implements OnClickListener, Callback,
         }
 
         if (mPickedDevice == null) {
-            showMessage(getString(R.string.error_connect, mPickedDevice.getName(),
-                    mPickedDevice.getAddress()));
+            showMessage(getString(R.string.error_no_device));
             return;
         }
 

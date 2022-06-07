@@ -42,6 +42,7 @@
 
     <!-- Error messages -->
     <string name="error_bluetooth_not_available">Bluetooth is not available or enabled</string>
+    <string name="error_no_device">Please select a device first</string>
     <string name="error_connect">Problem connecting to device %1$s (%2$s)</string>
     <string name="error_disconnect">Problem disconnecting from device %1$s (%2$s)</string>
     <string name="error_connection">Problem with connection to device %1$s (%2$s)</string>
